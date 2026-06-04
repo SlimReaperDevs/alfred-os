@@ -1,9 +1,12 @@
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import type { User, Track, Quest, ActivityEntry, Settings } from '../types';
 import { computeStreak } from '../engine/XpEngine';
 import { generateDailyBriefing } from '../engine/AlfredEngine';
 
-Notifications.setNotificationHandler({
+const isExpoGo = Constants.appOwnership === 'expo';
+
+if (!isExpoGo) Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: true,
     shouldSetBadge: true,
@@ -13,6 +16,7 @@ Notifications.setNotificationHandler({
 });
 
 export async function requestPermissions(): Promise<boolean> {
+  if (isExpoGo) return false;
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
 }
@@ -24,6 +28,7 @@ export async function scheduleAllNotifications(
   quests: Quest[],
   settings: Settings,
 ): Promise<void> {
+  if (isExpoGo) return;
   const prefs = settings.notificationPrefs;
   await Notifications.cancelAllScheduledNotificationsAsync();
 
