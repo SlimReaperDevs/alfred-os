@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #060608;
+  --color-surface: #0e0e12;
+  --color-border: #1a1a24;
+  --color-muted: #4a4a5a;
+  --color-text: #e8e8f0;
+  --color-gold: #c9a84c;
+  --color-blue: #4a9eff;
+  --color-cyan: #00d4ff;
+  --color-phase1: #4a9eff;
+  --color-phase2: #a855f7;
+  --color-run: #22c55e;
+  --color-strength: #ef4444;
+  --color-pilates: #ec4899;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Thin gold scrollbar to match the Alfred aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #060608;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a1a24;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c9a84c;
+}
