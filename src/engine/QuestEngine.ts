@@ -1,7 +1,10 @@
+// NOTE: platform-agnostic. The `react-native-get-random-values` polyfill that
+// uuid needs on React Native is imported once at the mobile app entry point
+// (App.tsx), so this shared engine stays free of platform-specific imports and
+// can be imported by the Next.js web app as well.
 import type { Track, Quest, ActivityEntry, Honorific } from '../types';
 import { getPhasesForTemplate } from './templates';
 import { computeStreak } from './XpEngine';
-import 'react-native-get-random-values';
 import { v4 as uuid } from 'uuid';
 
 const XP_COMPULSORY = 100;

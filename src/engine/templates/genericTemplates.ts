@@ -95,7 +95,10 @@ const cyclingPhases: TrackPhase[] = [
   },
 ];
 
-export const TEMPLATE_LIBRARY: Record<string, TemplateDefinition> = {
+/** Template types defined in this library file (everything except the three Popular templates). */
+type GenericTemplateType = Exclude<TrackTemplateType, 'hyrox' | 'pmp' | 'product_owner'>;
+
+export const TEMPLATE_LIBRARY: Record<GenericTemplateType, TemplateDefinition> = {
   marathon: {
     type: 'marathon', name: 'Marathon Training', description: 'Go from base fitness to race day.', popular: false, emoji: '🏃',
     phases: marathonPhases, resources: [
