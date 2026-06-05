@@ -5,7 +5,7 @@
 import type { Track, Quest, ActivityEntry, Honorific } from '../types';
 import { getPhasesForTemplate } from './templates';
 import { computeStreak } from './XpEngine';
-import { v4 as uuid } from 'uuid';
+import { generateId as uuid } from './id';
 
 const XP_COMPULSORY = 100;
 const XP_PENALTY = 75;
