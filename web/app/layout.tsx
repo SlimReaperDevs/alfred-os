@@ -16,6 +16,19 @@ export const metadata: Metadata = {
   title: "Alfred OS — Your Personal System Butler",
   description:
     "Alfred is your personal system butler — a British Butler meets Dungeon Master companion that tracks your goals, gamifies your progress, and ensures you become the finest version of yourself.",
+  openGraph: {
+    title: "Alfred OS — Your Personal System Butler",
+    description:
+      "Part British butler, part Dungeon Master. Track your goals, gamify your progress with a living D&D character, and become the finest version of yourself.",
+    type: "website",
+    siteName: "Alfred OS",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Alfred OS — Your Personal System Butler",
+    description:
+      "Part British butler, part Dungeon Master. Track your goals and become the finest version of yourself.",
+  },
 };
 
 export default function RootLayout({

@@ -22,14 +22,14 @@ export default function AppShell({
       {/* Header */}
       <header className="border-b border-border bg-surface/60 backdrop-blur sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full border border-gold flex items-center justify-center">
+          <Link href="/menu" className="flex items-center gap-3 group" title="The Heraldic Menu">
+            <div className="w-9 h-9 rounded-full border border-gold flex items-center justify-center group-hover:shadow-[0_0_14px_rgba(201,168,76,0.5)] transition-shadow">
               <span className="text-gold font-bold">A</span>
             </div>
             <span className="font-mono text-[11px] tracking-[0.25em] uppercase text-text hidden sm:block">
               Alfred <span className="text-gold">OS</span>
             </span>
-          </div>
+          </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">

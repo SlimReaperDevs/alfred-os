@@ -103,6 +103,42 @@ export async function getTracks(): Promise<Track[]> {
   return (data ?? []).map(mapTrack);
 }
 
+export async function getTrackById(id: string): Promise<Track | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('tracks').select('*').eq('id', id).maybeSingle();
+  return data ? mapTrack(data) : null;
+}
+
+/**
+ * Ensures a row exists in `users` for the authenticated account, creating a
+ * sensible default if this is the user's first web visit. Returns the record.
+ */
+export async function ensureUserRecord(): Promise<User | null> {
+  const existing = await getUserRecord();
+  if (existing) return existing;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const fresh: User = {
+    id: user.id,
+    email: user.email ?? '',
+    honorific: 'Sir',
+    displayName: '',
+    characterData: {
+      name: '', career: '', age: null, height: null, weight: null,
+      hobbies: '', backstory: '', charisma: 10,
+    },
+    onboardingComplete: false,
+    createdAt: new Date().toISOString(),
+  };
+  await upsertUserRecord(fresh);
+  return fresh;
+}
+
 export async function getActivity(): Promise<ActivityEntry[]> {
   const supabase = await createClient();
   const { data } = await supabase
