@@ -85,7 +85,7 @@ export default function ArmouryScreen() {
                 <Text style={{ color: colors.muted, fontSize: 11, marginTop: 1 }}>{t.sub}</Text>
               </View>
               <Switch
-                value={(prefs as Record<string, boolean>)[t.key] ?? true}
+                value={(prefs as unknown as Record<string, boolean>)[t.key] ?? true}
                 onValueChange={v => savePref(t.key, v)}
                 trackColor={{ false: colors.border, true: colors.gold }}
                 thumbColor={colors.text}

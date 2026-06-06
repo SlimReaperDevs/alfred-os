@@ -43,7 +43,7 @@ export default function CinematicIntroScreen({ onCommence }: Props) {
     <SafeAreaView className="flex-1 bg-[#060608] items-center justify-center px-8">
       {/* Heraldic Crest */}
       <Animated.View style={{ opacity: fadeAnim }} className="items-center mb-12">
-        <Animated.View style={{ opacity: glowAnim }}
+        <Animated.View
           className="w-24 h-24 rounded-full border-2 border-[#c9a84c] items-center justify-center"
           style={[{ opacity: glowAnim }, { shadowColor: '#c9a84c', shadowOpacity: 0.8, shadowRadius: 20, elevation: 10 }]}
         >

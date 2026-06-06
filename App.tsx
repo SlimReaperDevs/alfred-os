@@ -66,7 +66,7 @@ function AppGate() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" backgroundColor="#060608" />
+      <StatusBar style="light" />
       <AppProvider>
         <AppGate />
       </AppProvider>

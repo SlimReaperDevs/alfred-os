@@ -73,7 +73,7 @@ function TrackDetail({ track, onBack }: { track: Track; onBack: () => void }) {
       id: uuid(), userId: user.id, trackId: track.id,
       actionType: 'run_log',
       metadata: { km: parseFloat(runKm), minutes: parseFloat(runMin) },
-      xpAwarded: Math.round(parseFloat(runKm) * 12),
+      xpAwarded: applyStreakMultiplier(Math.round(parseFloat(runKm) * 12), activity),
       loggedAt: new Date().toISOString(),
     };
     await logActivity(entry);
@@ -88,7 +88,7 @@ function TrackDetail({ track, onBack }: { track: Track; onBack: () => void }) {
       id: uuid(), userId: user.id, trackId: track.id,
       actionType: 'station_pb',
       metadata: { station: stationName, time: stationTime },
-      xpAwarded: 80, loggedAt: new Date().toISOString(),
+      xpAwarded: applyStreakMultiplier(80, activity), loggedAt: new Date().toISOString(),
     };
     await logActivity(entry);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -105,7 +105,7 @@ function TrackDetail({ track, onBack }: { track: Track; onBack: () => void }) {
       id: uuid(), userId: user.id, trackId: track.id,
       actionType: 'mock_score',
       metadata: { score, total, percentage: pct },
-      xpAwarded: pct >= 75 ? 200 : pct >= 60 ? 120 : 80,
+      xpAwarded: applyStreakMultiplier(pct >= 75 ? 200 : pct >= 60 ? 120 : 80, activity),
       loggedAt: new Date().toISOString(),
     };
     await logActivity(entry);
@@ -120,12 +120,12 @@ function TrackDetail({ track, onBack }: { track: Track; onBack: () => void }) {
       id: uuid(), userId: user.id, trackId: track.id,
       actionType: 'build_log',
       metadata: { project: buildProject, description: buildDesc },
-      xpAwarded: 120, loggedAt: new Date().toISOString(),
+      xpAwarded: applyStreakMultiplier(120, activity), loggedAt: new Date().toISOString(),
     };
     await logActivity(entry);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setBuildProject(''); setBuildDesc('');
-    Alert.alert('Build Logged', `+120 XP, ${user.honorific}. The Vibe Coding log has been updated.`);
+    Alert.alert('Build Logged', `+${entry.xpAwarded} XP, ${user.honorific}. The Vibe Coding log has been updated.`);
   }
 
   const recentActivity = activity

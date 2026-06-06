@@ -159,6 +159,12 @@ export interface Quest {
   status: QuestStatus;
   dueDate: string; // ISO — end of day for daily, end of week for bounty
   completedAt: string | null;
+  /** For compulsory quests: the track session this quest maps to, used to
+   *  reconcile completion when that session is logged. */
+  sessionId?: string;
+  /** Whether a penalty has already been emitted for a missed quest (so we
+   *  never double-penalise across evaluation runs). */
+  penaltyApplied?: boolean;
 }
 
 // ─── Lore & Rewards ──────────────────────────────────────────────────────────

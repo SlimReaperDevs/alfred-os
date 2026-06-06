@@ -6,11 +6,13 @@ import {
 import 'react-native-get-random-values';
 import { v4 as uuid } from 'uuid';
 import { useApp } from '../../context/AppContext';
+import { signUp, signIn } from '../../services/DataService';
+import { hasSupabaseCredentials } from '../../lib/supabase';
 import { getAllTemplates, getTemplate } from '../../engine/templates';
 import type { User, Honorific, Track, TrackTemplateType } from '../../types';
 import { colors } from '../../theme/colors';
 
-type Step = 'honorific' | 'name' | 'character' | 'track' | 'dates' | 'complete';
+type Step = 'account' | 'honorific' | 'name' | 'character' | 'track' | 'dates' | 'complete';
 
 const HONORIFICS: Honorific[] = ['Sir', "Ma'am", 'Mx', 'Commander'];
 
@@ -20,7 +22,14 @@ interface Props {
 
 export default function OnboardingScreen({ onComplete }: Props) {
   const { setUser, upsertTrack } = useApp();
-  const [step, setStep] = useState<Step>('honorific');
+  const cloudEnabled = hasSupabaseCredentials();
+  const [step, setStep] = useState<Step>(cloudEnabled ? 'account' : 'honorific');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup');
+  const [authError, setAuthError] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [honorific, setHonorific] = useState<Honorific>('Sir');
   const [customHonorific, setCustomHonorific] = useState('');
   const [name, setName] = useState('');
@@ -38,13 +47,48 @@ export default function OnboardingScreen({ onComplete }: Props) {
   const finalHonorific: Honorific = customHonorific.trim() || honorific;
   const templates = getAllTemplates();
 
+  async function handleAccount() {
+    setAuthError('');
+    if (!email.trim() || !password) {
+      setAuthError('Both email and passphrase are required.');
+      return;
+    }
+    if (authMode === 'signup' && password.length < 6) {
+      setAuthError('Your passphrase must be at least 6 characters.');
+      return;
+    }
+    setAuthBusy(true);
+    try {
+      const { data, error } =
+        authMode === 'signup'
+          ? await signUp(email.trim(), password)
+          : await signIn(email.trim(), password);
+      if (error) {
+        setAuthError(error.message);
+        return;
+      }
+      if (!data.user) {
+        setAuthError('Account created, but no session was returned. Please sign in.');
+        setAuthMode('signin');
+        return;
+      }
+      setAuthUserId(data.user.id);
+      setStep('honorific');
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : 'Authentication failed.');
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
   async function handleComplete() {
-    const userId = uuid();
+    // Use the Supabase Auth user id so rows satisfy RLS (auth.uid() = user_id).
+    const userId = authUserId ?? uuid();
     const template = getTemplate(selectedTemplate);
 
     const user: User = {
       id: userId,
-      email: '',
+      email: email.trim(),
       honorific: finalHonorific,
       displayName: name.trim() || finalHonorific,
       onboardingComplete: true,
@@ -108,6 +152,51 @@ export default function OnboardingScreen({ onComplete }: Props) {
     <SafeAreaView className="flex-1 bg-[#060608]">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
         <ScrollView className="flex-1 px-6 pt-6" contentContainerStyle={{ paddingBottom: 40 }}>
+
+          {step === 'account' && (
+            <View>
+              {alfredMessage(
+                authMode === 'signup'
+                  ? 'Welcome. First, let us secure your account so your progress is preserved across devices.'
+                  : 'Welcome back. Sign in to resume your service.',
+              )}
+              <TextInput
+                className="border border-[#1a1a24] bg-[#0e0e12] text-[#e8e8f0] px-4 py-3 mb-2"
+                placeholder="Email"
+                placeholderTextColor={colors.muted}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+              />
+              <TextInput
+                className="border border-[#1a1a24] bg-[#0e0e12] text-[#e8e8f0] px-4 py-3 mb-2"
+                placeholder="Passphrase"
+                placeholderTextColor={colors.muted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoComplete={authMode === 'signup' ? 'password-new' : 'password'}
+              />
+              {authError ? (
+                <Text className="text-[#ef4444] text-xs mb-2">{authError}</Text>
+              ) : null}
+              {nextButton(
+                authBusy ? 'Engaging…' : authMode === 'signup' ? 'Create Account →' : 'Sign In →',
+                handleAccount,
+                authBusy,
+              )}
+              <TouchableOpacity
+                onPress={() => { setAuthMode(authMode === 'signup' ? 'signin' : 'signup'); setAuthError(''); }}
+                className="mt-4 items-center"
+              >
+                <Text className="text-[#4a4a5a] text-xs">
+                  {authMode === 'signup' ? 'Already in service? Sign in.' : 'No account yet? Create one.'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {step === 'honorific' && (
             <View>

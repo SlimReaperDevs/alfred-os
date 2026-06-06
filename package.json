@@ -27,16 +27,20 @@
     "uuid": "^14.0.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
     "@types/uuid": "^10.0.0",
+    "jest": "^30.4.2",
     "pg": "^8.21.0",
+    "ts-jest": "^29.4.11",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest"
   },
   "private": true
 }

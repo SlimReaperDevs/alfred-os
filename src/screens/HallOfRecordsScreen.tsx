@@ -59,6 +59,7 @@ export default function HallOfRecordsScreen() {
   }
 
   function openEdit() {
+    if (!user) return;
     setEditName(user.characterData.name);
     setEditCareer(user.characterData.career);
     setEditBackstory(user.characterData.backstory);

@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import type { Quest } from '../types';
 import { xpToLevel, levelProgress, xpForNextLevel, computeStreak } from '../engine/XpEngine';
 import { colors } from '../theme/colors';
 
@@ -18,7 +20,15 @@ function Tag({ label, color }: { label: string; color?: string }) {
 }
 
 export default function ManorScreen() {
-  const { user, tracks, activity, quests, characterState, dailyBriefing, isLoading } = useApp();
+  const { user, tracks, activity, quests, characterState, dailyBriefing, isLoading, completeQuest } = useApp();
+
+  async function onCompleteQuest(q: Quest) {
+    const speech = await completeQuest(q);
+    if (speech) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Quest Complete', speech);
+    }
+  }
 
   if (isLoading || !user) {
     return (
@@ -119,15 +129,26 @@ export default function ManorScreen() {
           {activeQuests.length === 0 ? (
             <Text style={{ color: colors.muted, fontSize: 12 }}>All quests complete, {user.honorific}. Admirable work.</Text>
           ) : (
-            activeQuests.slice(0, 5).map(q => (
-              <View key={q.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: q.type === 'compulsory' ? colors.strength : q.type === 'bounty' ? colors.gold : colors.cyan, marginRight: 10 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.text, fontSize: 13 }}>{q.title}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 11 }}>{q.type} · {q.xpReward} XP</Text>
-                </View>
-              </View>
-            ))
+            activeQuests.slice(0, 6).map(q => {
+              const tappable = q.type !== 'compulsory';
+              const dot = q.type === 'compulsory' ? colors.strength : q.type === 'bounty' ? colors.gold : colors.cyan;
+              return (
+                <TouchableOpacity
+                  key={q.id}
+                  activeOpacity={tappable ? 0.6 : 1}
+                  disabled={!tappable}
+                  onPress={() => tappable && onCompleteQuest(q)}
+                  style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}
+                >
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: dot, marginRight: 10 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.text, fontSize: 13 }}>{q.title}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11 }}>{q.type} · {q.xpReward} XP{q.type === 'compulsory' ? ' · log the session' : ' · tap to complete'}</Text>
+                  </View>
+                  {tappable && <Text style={{ color: dot, fontSize: 16 }}>○</Text>}
+                </TouchableOpacity>
+              );
+            })
           )}
         </SysPanel>
 
