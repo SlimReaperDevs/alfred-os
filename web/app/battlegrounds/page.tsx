@@ -1,0 +1,25 @@
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { getUserRecord } from '@/lib/data';
+import AppShell from '@/components/AppShell';
+import { Panel, Tag } from '@/components/ui';
+
+export default async function BattlegroundsPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+  const record = await getUserRecord();
+  const honorific = record?.honorific ?? 'Sir';
+
+  return (
+    <AppShell active="battlegrounds" honorific={honorific}>
+      <Panel>
+        <Tag color="var(--color-blue)">The Battlegrounds</Tag>
+        <p className="text-text text-lg font-bold mb-1">Active Tracks</p>
+        <p className="text-muted text-sm">
+          Coming in issue #22 — track detail views and logging, {honorific}.
+        </p>
+      </Panel>
+    </AppShell>
+  );
+}
