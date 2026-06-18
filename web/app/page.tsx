@@ -1,12 +1,5 @@
 import Link from 'next/link';
 
-const FEATURES = [
-  { emoji: '⚔', title: 'Configurable Tracks', body: 'Hyrox, PMP, coding, marathons, languages — any goal becomes a structured, phased programme.' },
-  { emoji: '⚡', title: 'Living D&D Character', body: 'Every session logged earns XP and shapes ability scores derived from your real progress.' },
-  { emoji: '✦', title: 'Your Personal Butler', body: 'Alfred briefs you daily, holds you accountable, and answers in impeccable British fashion.' },
-  { emoji: '🏆', title: 'Quests, Bounties & Lore', body: 'Daily quests, weekly bounties, rare titles, and sealed lore unlocked through discipline.' },
-];
-
 export default function LandingPage() {
   return (
     <main className="flex-1">
@@ -30,19 +23,6 @@ export default function LandingPage() {
         >
           Commence →
         </Link>
-      </section>
-
-      {/* Features */}
-      <section className="max-w-5xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="border border-border bg-surface p-6">
-              <span className="text-3xl">{f.emoji}</span>
-              <h3 className="text-text text-lg font-bold mt-3 mb-1.5">{f.title}</h3>
-              <p className="text-muted text-sm leading-relaxed">{f.body}</p>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* Quote / CTA */}
