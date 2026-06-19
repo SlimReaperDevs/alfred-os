@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import SectionTip from '../components/SectionTip';
 import type { Quest } from '../types';
 import { xpToLevel, levelProgress, xpForNextLevel, computeStreak } from '../engine/XpEngine';
 import { colors } from '../theme/colors';
@@ -53,6 +54,8 @@ export default function ManorScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['bottom']}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+
+        <SectionTip id="manor" text="This is The Manor — your home. My daily briefing sits at the top and updates from your live progress. Tap a side quest or bounty below to complete it." />
 
         {/* LOCKED: Alfred Daily Briefing */}
         <SysPanel>

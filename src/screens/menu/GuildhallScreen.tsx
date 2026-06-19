@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
+import ReplayTeaching from '../../components/ReplayTeaching';
 import { colors } from '../../theme/colors';
 
 export default function GuildhallScreen() {
@@ -56,6 +57,12 @@ export default function GuildhallScreen() {
             ))}
           </View>
         ))}
+
+        <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 16, marginBottom: 12 }}>
+          <Text style={{ color: colors.blue, fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>First-Run Guidance</Text>
+          <Text style={{ color: colors.muted, fontSize: 11, marginBottom: 12 }}>Re-watch the introduction and see the section tips again. Your data is untouched.</Text>
+          <ReplayTeaching />
+        </View>
 
         <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
           <Text style={{ color: colors.phase2, fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Alfred's Parting Words</Text>

@@ -2,6 +2,7 @@ import {
   reconcileQuests,
   applyStreakMultiplier,
   generateCompulsoryQuests,
+  generateStarterQuest,
 } from '../QuestEngine';
 import type { Quest, ActivityEntry, Track } from '../../types';
 
@@ -112,6 +113,16 @@ describe('applyStreakMultiplier', () => {
     expect(applyStreakMultiplier(100, make(7))).toBe(125);
     expect(applyStreakMultiplier(100, make(14))).toBe(150);
     expect(applyStreakMultiplier(100, make(30))).toBe(200);
+  });
+});
+
+describe('generateStarterQuest', () => {
+  it('produces a deterministic, always-available starter quest with XP', () => {
+    const q = generateStarterQuest('user-1');
+    expect(q.id).toBe('starter-user-1');
+    expect(q.xpReward).toBeGreaterThan(0);
+    expect(q.status).toBe('active');
+    expect(new Date(q.dueDate).getTime()).toBeGreaterThan(Date.now()); // not expired
   });
 });
 

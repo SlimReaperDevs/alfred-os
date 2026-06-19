@@ -78,10 +78,83 @@ export async function signOut() {
   await AsyncStorage.multiRemove(Object.values(KEYS));
 }
 
+/**
+ * "Start Anew" — wipes all progress but KEEPS the auth account, then leaves the
+ * user record flagged as not-onboarded so the app routes back into onboarding.
+ */
+export async function startAnew(): Promise<void> {
+  if (hasSupabaseCredentials()) {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      await supabase.from('activity_log').delete().eq('user_id', authUser.id);
+      await supabase.from('tracks').delete().eq('user_id', authUser.id); // cascades resources
+      await supabase.from('users').update({
+        display_name: '',
+        character_data: {},
+        onboarding_complete: false,
+      }).eq('id', authUser.id);
+    }
+  }
+  // Clear local progress but keep the auth session intact.
+  await AsyncStorage.multiRemove([
+    KEYS.USER, KEYS.TRACKS, KEYS.ACTIVITY, KEYS.QUESTS, KEYS.CHAT, KEYS.RESOURCES, KEYS.PENDING_SYNC,
+  ]);
+}
+
 export async function getSession() {
   if (!hasSupabaseCredentials()) return null;
   const { data } = await supabase.auth.getSession();
   return data.session;
+}
+
+/**
+ * Fetches the authenticated user's record + tracks + activity from Supabase and
+ * caches them locally. Used after sign-in so a user who onboarded on another
+ * device (e.g. web) is recognised and not made to onboard again.
+ */
+export async function hydrateFromCloud(): Promise<User | null> {
+  if (!hasSupabaseCredentials()) return null;
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) return null;
+
+  const { data: urow } = await supabase.from('users').select('*').eq('id', authUser.id).maybeSingle();
+  if (!urow) return null;
+
+  const user: User = {
+    id: urow.id,
+    email: urow.email ?? authUser.email ?? '',
+    honorific: urow.honorific ?? 'Sir',
+    displayName: urow.display_name ?? '',
+    characterData: urow.character_data ?? {},
+    onboardingComplete: urow.onboarding_complete ?? false,
+    createdAt: urow.created_at ?? new Date().toISOString(),
+  };
+  await setLocal(KEYS.USER, user);
+
+  const { data: trows } = await supabase.from('tracks').select('*').eq('user_id', authUser.id);
+  if (trows) {
+    const tracks: Track[] = trows.map((t) => ({
+      id: t.id, userId: t.user_id, templateType: t.template_type, name: t.name,
+      currentPhaseIndex: t.config?.currentPhaseIndex ?? 0,
+      keyDates: t.config?.keyDates ?? [],
+      status: t.status ?? 'active',
+      startDate: t.config?.startDate ?? t.created_at ?? new Date().toISOString(),
+      createdAt: t.created_at ?? new Date().toISOString(),
+    }));
+    await setLocal(KEYS.TRACKS, tracks);
+  }
+
+  const { data: arows } = await supabase.from('activity_log').select('*').eq('user_id', authUser.id);
+  if (arows) {
+    const activity: ActivityEntry[] = arows.map((a) => ({
+      id: a.id, userId: a.user_id, trackId: a.track_id, actionType: a.action_type,
+      metadata: a.metadata ?? {}, xpAwarded: a.xp_awarded ?? 0,
+      loggedAt: a.logged_at ?? new Date().toISOString(),
+    }));
+    await setLocal(KEYS.ACTIVITY, activity);
+  }
+
+  return user;
 }
 
 // ─── Tracks ───────────────────────────────────────────────────────────────────

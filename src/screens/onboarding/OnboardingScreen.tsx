@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   SafeAreaView, KeyboardAvoidingView, Platform,
@@ -6,13 +6,21 @@ import {
 import 'react-native-get-random-values';
 import { v4 as uuid } from 'uuid';
 import { useApp } from '../../context/AppContext';
-import { signUp, signIn } from '../../services/DataService';
+import * as Haptics from 'expo-haptics';
+import { signUp, signIn, hydrateFromCloud, logActivity, getSession } from '../../services/DataService';
 import { hasSupabaseCredentials } from '../../lib/supabase';
+import { generateStarterQuest } from '../../engine/QuestEngine';
 import { getAllTemplates, getTemplate } from '../../engine/templates';
 import type { User, Honorific, Track, TrackTemplateType } from '../../types';
 import { colors } from '../../theme/colors';
 
-type Step = 'account' | 'honorific' | 'name' | 'character' | 'track' | 'dates' | 'complete';
+type Step = 'account' | 'honorific' | 'name' | 'character' | 'track' | 'dates' | 'explainer' | 'guided' | 'complete';
+
+const EXPLAINER_BEATS = [
+  { icon: '⚡', title: 'Earn as you act', body: 'Every session, run, or chapter you log earns XP and levels up your character. Your progress is real, and so is your growth.' },
+  { icon: '⚔', title: 'Quests keep you honest', body: 'Compulsory quests come from your tracks — miss them and there is a penalty. Side quests and weekly bounties earn bonus XP.' },
+  { icon: '🏆', title: 'Titles & sealed lore', body: 'Hit milestones to unlock rare titles, and complete bounties to reveal sealed chapters of my story, one by one.' },
+];
 
 const HONORIFICS: Honorific[] = ['Sir', "Ma'am", 'Mx', 'Commander'];
 
@@ -43,9 +51,24 @@ export default function OnboardingScreen({ onComplete }: Props) {
   const [selectedTemplate, setSelectedTemplate] = useState<TrackTemplateType>('hyrox');
   const [trackName, setTrackName] = useState('');
   const [keyDate, setKeyDate] = useState('');
+  const [beat, setBeat] = useState(0);
+  const [starterXp, setStarterXp] = useState<number | null>(null);
+  const [questBusy, setQuestBusy] = useState(false);
 
   const finalHonorific: Honorific = customHonorific.trim() || honorific;
   const templates = getAllTemplates();
+
+  // If already authenticated (e.g. after "Start Anew"), skip the account step.
+  useEffect(() => {
+    if (!cloudEnabled) return;
+    getSession().then((s) => {
+      if (s?.user) {
+        setAuthUserId(s.user.id);
+        setEmail(s.user.email ?? '');
+        setStep((prev) => (prev === 'account' ? 'honorific' : prev));
+      }
+    });
+  }, [cloudEnabled]);
 
   async function handleAccount() {
     setAuthError('');
@@ -73,12 +96,41 @@ export default function OnboardingScreen({ onComplete }: Props) {
         return;
       }
       setAuthUserId(data.user.id);
+
+      // If this account already onboarded (e.g. on web), hydrate and skip setup.
+      if (authMode === 'signin') {
+        const cloudUser = await hydrateFromCloud();
+        if (cloudUser?.onboardingComplete) {
+          await setUser(cloudUser);
+          onComplete();
+          return;
+        }
+      }
       setStep('honorific');
     } catch (e) {
       setAuthError(e instanceof Error ? e.message : 'Authentication failed.');
     } finally {
       setAuthBusy(false);
     }
+  }
+
+  async function markArrival() {
+    if (starterXp !== null) return;
+    setQuestBusy(true);
+    const uid = authUserId ?? uuid();
+    const quest = generateStarterQuest(uid);
+    await logActivity({
+      id: `${quest.id}-done`,
+      userId: uid,
+      trackId: '',
+      actionType: 'side_quest_complete',
+      metadata: { questId: quest.id, title: quest.title, starter: true },
+      xpAwarded: quest.xpReward,
+      loggedAt: new Date().toISOString(),
+    });
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setStarterXp(quest.xpReward);
+    setQuestBusy(false);
   }
 
   async function handleComplete() {
@@ -329,7 +381,45 @@ export default function OnboardingScreen({ onComplete }: Props) {
                 value={keyDate}
                 onChangeText={setKeyDate}
               />
-              {nextButton('Continue →', () => setStep('complete'))}
+              {nextButton('Continue →', () => setStep('explainer'))}
+            </View>
+          )}
+
+          {step === 'explainer' && (
+            <View className="items-center">
+              <Text className="text-5xl mb-4">{EXPLAINER_BEATS[beat].icon}</Text>
+              <Text className="text-[#c9a84c] font-mono text-[10px] tracking-widest uppercase mb-2">{beat + 1} of {EXPLAINER_BEATS.length}</Text>
+              <Text className="text-[#e8e8f0] text-xl font-bold mb-3 text-center">{EXPLAINER_BEATS[beat].title}</Text>
+              <Text className="text-[#4a4a5a] text-sm text-center leading-6 mb-6 px-2">{EXPLAINER_BEATS[beat].body}</Text>
+              {nextButton(beat < EXPLAINER_BEATS.length - 1 ? 'Next →' : 'Got it →', () => {
+                if (beat < EXPLAINER_BEATS.length - 1) setBeat(beat + 1);
+                else setStep('guided');
+              })}
+              <TouchableOpacity onPress={() => setStep('guided')} className="mt-3 items-center">
+                <Text className="text-[#4a4a5a] text-xs">Skip</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {step === 'guided' && (
+            <View className="items-center">
+              <View className="w-16 h-16 rounded-full border-2 border-[#c9a84c] items-center justify-center mb-4">
+                <Text className="text-[#c9a84c] text-3xl font-bold">A</Text>
+              </View>
+              <Text className="text-[#c9a84c] font-mono text-[10px] tracking-widest uppercase mb-2">Your First Directive</Text>
+              {starterXp === null ? (
+                <>
+                  <Text className="text-[#e8e8f0] text-lg font-semibold mb-1">Log your arrival to the Manor</Text>
+                  <Text className="text-[#4a4a5a] text-sm text-center mb-6 px-4">Mark your arrival, {finalHonorific}, and feel the System record it.</Text>
+                  {nextButton(questBusy ? 'Recording…' : 'Mark Arrival', markArrival, questBusy)}
+                </>
+              ) : (
+                <>
+                  <Text className="text-[#22c55e] text-3xl font-bold mb-1">+{starterXp} XP</Text>
+                  <Text className="text-[#4a4a5a] text-sm text-center mb-6 px-4">Your journey is recorded. That is the loop, {finalHonorific} — act, and be rewarded.</Text>
+                  {nextButton('Continue →', () => setStep('complete'))}
+                </>
+              )}
             </View>
           )}
 

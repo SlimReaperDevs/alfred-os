@@ -7,6 +7,7 @@ import { v4 as uuid } from 'uuid';
 import { useApp } from '../context/AppContext';
 import { getPhasesForTemplate } from '../engine/templates';
 import { applyStreakMultiplier } from '../engine/QuestEngine';
+import SectionTip from '../components/SectionTip';
 import { colors } from '../theme/colors';
 import type { Track, ActivityEntry } from '../types';
 
@@ -257,6 +258,7 @@ export default function BattlegroundsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['bottom']}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+        <SectionTip id="battlegrounds" text="The Battlegrounds hold your tracks. Open one to log today's session, runs, PBs or scores — each entry earns XP." />
         <Text style={{ color: colors.muted, fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>The Battlegrounds</Text>
         <Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>Active Tracks</Text>
 

@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
+import { startAnew, signOut } from '../../services/DataService';
 import { colors } from '../../theme/colors';
 import type { Settings } from '../../types';
 
 export default function ArmouryScreen() {
-  const { user, settings, saveSettings, setUser } = useApp();
+  const { user, settings, saveSettings, setUser, reload } = useApp();
   const [prefs, setPrefs] = useState(settings?.notificationPrefs ?? {
     morningBriefing: true, eveningWarning: true, streakAtRisk: true,
     milestones: true, rewardAlerts: true, morningHour: 7, eveningHour: 20,
@@ -32,19 +33,25 @@ export default function ArmouryScreen() {
     Alert.alert('Updated', `Alfred will now address you as "${newHonorific}", ${newHonorific}.`);
   }
 
-  async function resetAllData() {
+  function startAnewFlow() {
     Alert.alert(
-      'Are you certain?',
-      `This cannot be undone, ${user?.honorific ?? 'Sir'}. All records will be expunged.`,
+      'Start Anew?',
+      `Are you certain, ${user?.honorific ?? 'Sir'}? Every record — tracks, XP, quests, history — will be expunged. Your login is kept, but this cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Reset Everything', style: 'destructive', onPress: async () => {
-          const { default: AS } = await import('@react-native-async-storage/async-storage');
-          await AS.clear();
-          Alert.alert('System Reset', 'The Manor has been cleared.');
+        { text: 'Expunge Everything', style: 'destructive', onPress: async () => {
+          await startAnew();
+          await reload(); // user record cleared -> app routes back into onboarding
         }},
       ]
     );
+  }
+
+  function signOutFlow() {
+    Alert.alert('Sign Out?', 'Your data is kept and will return when you sign back in.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: async () => { await signOut(); await reload(); } },
+    ]);
   }
 
   const notifToggles = [
@@ -96,9 +103,13 @@ export default function ArmouryScreen() {
 
         {/* Danger Zone */}
         <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: '#3a0000', padding: 16 }}>
-          <Text style={{ color: colors.strength, fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Danger Zone</Text>
-          <TouchableOpacity onPress={resetAllData} style={{ borderWidth: 1, borderColor: colors.strength, padding: 14, alignItems: 'center' }}>
-            <Text style={{ color: colors.strength, fontFamily: 'monospace', fontSize: 11, letterSpacing: 2 }}>⚠ RESET ALL DATA</Text>
+          <Text style={{ color: colors.strength, fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Danger Zone</Text>
+          <Text style={{ color: colors.muted, fontSize: 11, marginBottom: 12 }}>Sign Out keeps your data. Start Anew erases everything and restarts onboarding — your login stays the same.</Text>
+          <TouchableOpacity onPress={signOutFlow} style={{ borderWidth: 1, borderColor: colors.border, padding: 14, alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ color: colors.muted, fontFamily: 'monospace', fontSize: 11, letterSpacing: 2 }}>SIGN OUT</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={startAnewFlow} style={{ borderWidth: 1, borderColor: colors.strength, padding: 14, alignItems: 'center' }}>
+            <Text style={{ color: colors.strength, fontFamily: 'monospace', fontSize: 11, letterSpacing: 2 }}>⚠ START ANEW</Text>
           </TouchableOpacity>
         </View>
 

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '../context/AppContext';
 import { abilityModifier, levelProgress, xpForNextLevel } from '../engine/XpEngine';
+import SectionTip from '../components/SectionTip';
 import { colors } from '../theme/colors';
 
 function SysPanel({ children }: { children: React.ReactNode }) {
@@ -69,6 +70,8 @@ export default function HallOfRecordsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['bottom']}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+
+        <SectionTip id="hall" text="The Hall of Records is your character sheet. Ability scores derive from real progress, titles unlock at milestones, and sealed lore is revealed by completing weekly bounties." />
 
         {/* Character Header */}
         <SysPanel>
