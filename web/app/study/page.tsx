@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { ensureUserRecord, getTracks, getActivity } from '@/lib/data';
+import { requireOnboarded, getTracks, getActivity } from '@/lib/data';
 import { computeCharacterState } from '@engine/XpEngine';
 import { generateCompulsoryQuests } from '@engine/QuestEngine';
 import type { AlfredContext } from '@engine/AlfredEngine';
 import AppShell from '@/components/AppShell';
 import { Tag } from '@/components/ui';
+import SectionTip from '@/components/SectionTip';
 import Chat from '@/components/Chat';
 import type { CharacterData } from '@shared/types';
 
@@ -19,7 +20,7 @@ export default async function StudyPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await ensureUserRecord();
+  const record = await requireOnboarded();
   const honorific = record?.honorific ?? 'Sir';
   const [tracks, activity] = await Promise.all([getTracks(), getActivity()]);
   const state = computeCharacterState(activity, record?.characterData ?? DEFAULT_CHARACTER);
@@ -38,6 +39,7 @@ export default async function StudyPage() {
 
   return (
     <AppShell active="study" honorific={honorific}>
+      <SectionTip id="study" text="The Study is where we converse. Ask me about your training, studies, race prep, or how you're doing — I read your live progress before I answer." />
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-full border border-gold flex items-center justify-center">
           <span className="text-gold font-bold">A</span>

@@ -39,6 +39,32 @@ function weekNumber(): number {
   return Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
 }
 
+// ─── Onboarding starter quest ──────────────────────────────────────────────────
+
+/**
+ * A one-off "log your arrival" quest used by the onboarding guided-first-action.
+ * Always available (no weekday dependency), awards starter XP so every new user
+ * feels the XP/level/streak loop once before being left on their own. Shared by
+ * both web and mobile so the first-run experience is identical.
+ */
+export function generateStarterQuest(userId: string): Quest {
+  const farFuture = new Date();
+  farFuture.setFullYear(farFuture.getFullYear() + 1);
+  return {
+    id: `starter-${userId}`,
+    userId,
+    trackId: '',
+    type: 'side',
+    title: 'Log your arrival to the Manor',
+    description: 'Tap to mark your arrival, and the System shall record it.',
+    xpReward: 50,
+    xpPenalty: 0,
+    status: 'active',
+    dueDate: farFuture.toISOString(),
+    completedAt: null,
+  };
+}
+
 // ─── Compulsory quest generation (deterministic ids → idempotent) ──────────────
 
 export function generateCompulsoryQuests(userId: string, tracks: Track[]): Quest[] {

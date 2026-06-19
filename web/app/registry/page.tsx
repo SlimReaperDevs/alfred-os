@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { ensureUserRecord, getTracks } from '@/lib/data';
+import { requireOnboarded, getTracks } from '@/lib/data';
 import { getAllTemplates } from '@engine/templates';
 import AppShell from '@/components/AppShell';
 import { Tag } from '@/components/ui';
@@ -11,7 +11,7 @@ export default async function RegistryPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await ensureUserRecord();
+  const record = await requireOnboarded();
   const honorific = record?.honorific ?? 'Sir';
   const tracks = await getTracks();
   const activeTypes = tracks.filter((t) => t.status === 'active').map((t) => t.templateType);

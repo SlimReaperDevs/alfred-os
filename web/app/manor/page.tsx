@@ -1,6 +1,4 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import { getUserRecord, getTracks, getActivity } from '@/lib/data';
+import { requireOnboarded, getTracks, getActivity } from '@/lib/data';
 import {
   computeCharacterState,
   xpToLevel,
@@ -12,6 +10,7 @@ import { generateDailyBriefing } from '@engine/AlfredEngine';
 import { generateCompulsoryQuests } from '@engine/QuestEngine';
 import AppShell from '@/components/AppShell';
 import { Panel, Tag, StatCard } from '@/components/ui';
+import SectionTip from '@/components/SectionTip';
 import type { CharacterData } from '@shared/types';
 
 const DEFAULT_CHARACTER: CharacterData = {
@@ -24,20 +23,15 @@ function daysUntil(iso: string): number {
 }
 
 export default async function ManorPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const record = await requireOnboarded();
+  const [tracks, activity] = await Promise.all([getTracks(), getActivity()]);
 
-  const [record, tracks, activity] = await Promise.all([
-    getUserRecord(), getTracks(), getActivity(),
-  ]);
-
-  const honorific = record?.honorific ?? 'Sir';
-  const characterData = record?.characterData ?? DEFAULT_CHARACTER;
+  const honorific = record.honorific ?? 'Sir';
+  const characterData = record.characterData ?? DEFAULT_CHARACTER;
   const state = computeCharacterState(activity, characterData);
   const streak = computeStreak(activity);
   const activeTracks = tracks.filter((t) => t.status === 'active');
-  const quests = generateCompulsoryQuests(record?.id ?? user.id, activeTracks);
+  const quests = generateCompulsoryQuests(record.id, activeTracks);
 
   const briefing = generateDailyBriefing({
     honorific,
@@ -57,6 +51,7 @@ export default async function ManorPage() {
 
   return (
     <AppShell active="manor" honorific={honorific}>
+      <SectionTip id="manor" text="This is The Manor — your home. My daily briefing sits at the top, locked, and updates from your live progress. Everything below reflects your real data." />
       {/* LOCKED: Alfred's Daily Briefing */}
       <Panel className="mb-4">
         <div className="flex items-start gap-3">

@@ -1,22 +1,24 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { ensureUserRecord, getTracks } from '@/lib/data';
+import { requireOnboarded, getTracks } from '@/lib/data';
 import { getPhasesForTemplate } from '@engine/templates';
 import AppShell from '@/components/AppShell';
 import { Panel, Tag } from '@/components/ui';
+import SectionTip from '@/components/SectionTip';
 
 export default async function BattlegroundsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await ensureUserRecord();
+  const record = await requireOnboarded();
   const honorific = record?.honorific ?? 'Sir';
   const tracks = (await getTracks()).filter((t) => t.status === 'active');
 
   return (
     <AppShell active="battlegrounds" honorific={honorific}>
+      <SectionTip id="battlegrounds" text="The Battlegrounds hold your active tracks. Open one to log today's session, runs, PBs or scores — each entry earns XP. Add new tracks from The Grand Registry." />
       <div className="flex items-center justify-between mb-4">
         <div>
           <Tag color="var(--color-blue)">The Battlegrounds</Tag>

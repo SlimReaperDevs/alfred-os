@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { ensureUserRecord, getTrackById, getActivity } from '@/lib/data';
+import { requireOnboarded, getTrackById, getActivity } from '@/lib/data';
 import { getPhasesForTemplate } from '@engine/templates';
 import AppShell from '@/components/AppShell';
 import { Panel, Tag } from '@/components/ui';
@@ -17,7 +17,7 @@ export default async function TrackDetailPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await ensureUserRecord();
+  const record = await requireOnboarded();
   const honorific = record?.honorific ?? 'Sir';
   const track = await getTrackById(id);
   if (!track) notFound();

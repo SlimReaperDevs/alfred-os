@@ -1,14 +1,15 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { ensureUserRecord } from '@/lib/data';
+import { requireOnboarded } from '@/lib/data';
 import AppShell from '@/components/AppShell';
 import { Panel, Tag } from '@/components/ui';
+import ReplayTeaching from '@/components/ReplayTeaching';
 
 export default async function GuildhallPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
-  const record = await ensureUserRecord();
+  const record = await requireOnboarded();
   const honorific = record?.honorific ?? 'Sir';
 
   const sections = [
@@ -53,6 +54,14 @@ export default async function GuildhallPage() {
             </div>
           </Panel>
         ))}
+
+        <Panel>
+          <Tag color="var(--color-blue)">First-Run Guidance</Tag>
+          <p className="text-muted text-[11px] mt-2 mb-3">
+            Re-watch the introduction and see the section tips again. Your data is untouched.
+          </p>
+          <ReplayTeaching />
+        </Panel>
 
         <Panel>
           <Tag color="var(--color-phase2)">Alfred&apos;s Parting Words</Tag>

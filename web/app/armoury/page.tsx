@@ -1,17 +1,18 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { ensureUserRecord } from '@/lib/data';
+import { requireOnboarded } from '@/lib/data';
 import { logout } from '@/app/actions/auth';
 import AppShell from '@/components/AppShell';
 import { Panel, Tag } from '@/components/ui';
 import ArmourySettings from '@/components/ArmourySettings';
+import StartAnew from '@/components/StartAnew';
 
 export default async function ArmouryPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await ensureUserRecord();
+  const record = await requireOnboarded();
   const honorific = record?.honorific ?? 'Sir';
 
   return (
@@ -44,6 +45,15 @@ export default async function ArmouryPage() {
               Sign Out
             </button>
           </form>
+        </Panel>
+
+        <Panel>
+          <Tag color="var(--color-strength)">Danger Zone</Tag>
+          <p className="text-muted text-[11px] mt-2 mb-3">
+            Sign Out keeps your data. Start Anew erases everything and restarts onboarding —
+            your login stays the same.
+          </p>
+          <StartAnew honorific={honorific} />
         </Panel>
       </div>
     </AppShell>

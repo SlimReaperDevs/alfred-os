@@ -5,6 +5,7 @@
  * Maps snake_case DB rows <-> the shared camelCase domain types (../src/types),
  * which are the same types the mobile app uses.
  */
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import type {
   User,
@@ -210,6 +211,18 @@ export async function upsertTrack(track: Track): Promise<void> {
     },
     status: track.status,
   });
+}
+
+/**
+ * Gate for authenticated app pages: ensures the user exists, redirects to
+ * /login if not signed in, or to /onboarding if they haven't finished it.
+ * Returns the user record for the page to use.
+ */
+export async function requireOnboarded(): Promise<User> {
+  const record = await ensureUserRecord();
+  if (!record) redirect('/login');
+  if (!record.onboardingComplete) redirect('/onboarding');
+  return record;
 }
 
 export async function upsertUserRecord(user: User): Promise<void> {

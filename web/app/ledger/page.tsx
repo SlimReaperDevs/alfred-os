@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { ensureUserRecord, getTracks, getActivity, getResources } from '@/lib/data';
+import { requireOnboarded, getTracks, getActivity, getResources } from '@/lib/data';
 import AppShell from '@/components/AppShell';
 import { Panel, Tag } from '@/components/ui';
 import LedgerExport from '@/components/LedgerExport';
@@ -11,7 +11,7 @@ export default async function LedgerPage() {
   if (!user) redirect('/login');
 
   const [record, tracks, activity, resources] = await Promise.all([
-    ensureUserRecord(), getTracks(), getActivity(), getResources(),
+    requireOnboarded(), getTracks(), getActivity(), getResources(),
   ]);
   const honorific = record?.honorific ?? 'Sir';
 

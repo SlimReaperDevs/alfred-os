@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { ensureUserRecord, getActivity } from '@/lib/data';
+import { requireOnboarded, getActivity } from '@/lib/data';
 import { computeCharacterState, abilityModifier, levelProgress, xpForNextLevel } from '@engine/XpEngine';
 import AppShell from '@/components/AppShell';
 import { Panel, Tag } from '@/components/ui';
+import SectionTip from '@/components/SectionTip';
 import EditCharacter from '@/components/EditCharacter';
 import type { CharacterData } from '@shared/types';
 
@@ -26,7 +27,7 @@ export default async function HallPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await ensureUserRecord();
+  const record = await requireOnboarded();
   const honorific = record?.honorific ?? 'Sir';
   const character = record?.characterData ?? DEFAULT_CHARACTER;
   const activity = await getActivity();
@@ -35,6 +36,7 @@ export default async function HallPage() {
 
   return (
     <AppShell active="hall" honorific={honorific}>
+      <SectionTip id="hall" text="The Hall of Records is your character sheet. Your ability scores are derived from real progress, titles unlock at milestones, and sealed lore is revealed as you complete weekly bounties." />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Header */}
         <Panel className="lg:col-span-3">
