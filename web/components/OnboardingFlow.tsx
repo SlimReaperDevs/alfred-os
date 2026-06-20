@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { completeOnboardingAction, logStarterQuestAction } from '@/app/actions/onboarding';
 import { EXPLAINER_BEATS } from '@/lib/explainer';
@@ -14,11 +14,12 @@ interface TemplateInfo {
   emoji: string;
 }
 
-type Phase = 'intro' | 'setup' | 'explainer' | 'guided' | 'welcome';
+// The cinematic "Commence" intro lives on the public landing page (before login),
+// to match mobile. Onboarding here begins straight at setup.
+type Phase = 'setup' | 'explainer' | 'guided' | 'welcome';
 type SetupStep = 'honorific' | 'name' | 'character' | 'track' | 'date';
 
 const HONORIFICS = ['Sir', "Ma'am", 'Mx', 'Commander'];
-const INTRO = "I am Alfred — your personal system butler. I have been designed to serve one purpose: to ensure you become the finest version of yourself. Shall we commence?";
 
 const EXPLAINER = EXPLAINER_BEATS;
 
@@ -32,7 +33,7 @@ export default function OnboardingFlow({
   email: string;
 }) {
   const router = useRouter();
-  const [phase, setPhase] = useState<Phase>('intro');
+  const [phase, setPhase] = useState<Phase>('setup');
   const [, startTransition] = useTransition();
 
   // setup state
@@ -85,8 +86,6 @@ export default function OnboardingFlow({
       router.refresh();
     });
   }
-
-  if (phase === 'intro') return <Intro onCommence={() => setPhase('setup')} />;
 
   if (phase === 'guided') {
     return (
@@ -279,39 +278,5 @@ function Next({ onClick, disabled, label = 'Confirm →' }: { onClick: () => voi
       className={`w-full border py-3.5 mt-4 font-mono text-xs tracking-[0.2em] uppercase transition-colors ${disabled ? 'border-border text-muted' : 'border-gold text-gold hover:bg-gold hover:text-bg'}`}>
       {label}
     </button>
-  );
-}
-
-function Intro({ onCommence }: { onCommence: () => void }) {
-  const [shown, setShown] = useState('');
-  const [done, setDone] = useState(false);
-  const started = useRef(false);
-
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    let i = 0;
-    const t = setInterval(() => {
-      i++;
-      setShown(INTRO.slice(0, i));
-      if (i >= INTRO.length) { clearInterval(t); setDone(true); }
-    }, 26);
-    return () => clearInterval(t);
-  }, []);
-
-  return (
-    <Centered>
-      <Crest big />
-      <p className="text-gold font-mono text-[10px] tracking-[0.25em] uppercase mt-5 mb-8">Alfred OS · v2.0</p>
-      <p className="text-text text-base text-center leading-7 max-w-md font-mono min-h-[120px]">
-        {shown}
-        {!done && <span className="text-gold">|</span>}
-      </p>
-      {done && (
-        <button onClick={onCommence} className="border border-gold text-gold font-mono text-xs tracking-[0.2em] uppercase px-12 py-4 mt-8 hover:bg-gold hover:text-bg transition-colors">
-          Commence →
-        </button>
-      )}
-    </Centered>
   );
 }
