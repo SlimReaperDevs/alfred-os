@@ -218,7 +218,9 @@ export function generateDailyBriefing(ctx: AlfredContext): string {
   else if (streak > 0) parts.push(`Current streak: ${streak} days.`);
 
   if (activeQuests.length > 0) {
-    parts.push(`${activeQuests.length} active quest${activeQuests.length > 1 ? 's' : ''} await.`);
+    // The verb has to agree too: "1 active quest awaits", "2 active quests await".
+    const plural = activeQuests.length > 1;
+    parts.push(`${activeQuests.length} active quest${plural ? 's' : ''} ${plural ? 'await' : 'awaits'}.`);
   }
 
   parts.push('The System is ready when you are.');
