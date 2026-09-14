@@ -1,8 +1,13 @@
 -- Alfred OS — Supabase Schema
 -- Run this in the Supabase SQL editor after creating your project
 
+-- id IS the auth user id — never generated here. The RLS policy below is
+-- `auth.uid() = id`, so a row with any other id would be invisible to its own
+-- owner. The cascade means deleting the auth account also removes the app row;
+-- without it the row is orphaned and, because email is unique, that address can
+-- never be registered again (BUG-1).
 create table if not exists public.users (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key references auth.users(id) on delete cascade,
   email text unique not null,
   honorific text not null default 'Sir',
   display_name text not null default '',

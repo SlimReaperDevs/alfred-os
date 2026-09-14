@@ -120,7 +120,9 @@ export default function OnboardingScreen({ onComplete }: Props) {
     const uid = authUserId ?? uuid();
     const quest = generateStarterQuest(uid);
     await logActivity({
-      id: `${quest.id}-done`,
+      // activity_log.id is a uuid column — a composite string is rejected with
+      // 22P02 and, because logActivity drops the error, the XP is silently lost.
+      id: uuid(),
       userId: uid,
       trackId: '',
       actionType: 'side_quest_complete',

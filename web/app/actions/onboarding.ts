@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { logActivity, upsertTrack, upsertUserRecord, getAuthUserId } from '@/lib/data';
 import { generateStarterQuest } from '@engine/QuestEngine';
+import { generateId } from '@engine/id';
 import { getTemplate } from '@engine/templates';
 import type { TrackTemplateType, Track, User, CharacterData } from '@shared/types';
 
@@ -23,7 +24,9 @@ export async function logStarterQuestAction(): Promise<number> {
   if (!uid) return 0;
   const quest = generateStarterQuest(uid);
   await logActivity({
-    id: `${quest.id}-done`,
+    // activity_log.id is a uuid column — a composite string is rejected with
+    // 22P02 and, because logActivity drops the error, the XP vanished silently.
+    id: generateId(),
     userId: uid,
     trackId: quest.trackId || (null as unknown as string),
     actionType: 'side_quest_complete',
@@ -80,7 +83,8 @@ export async function completeOnboardingAction(payload: OnboardingPayload): Prom
 
   const template = getTemplate(payload.templateType);
   const track: Track = {
-    id: `${uid}-${payload.templateType}-${Date.now()}`,
+    // tracks.id is a uuid column — see the note in logStarterQuestAction.
+    id: generateId(),
     userId: uid,
     templateType: payload.templateType,
     name: payload.trackName.trim() || template.name,
