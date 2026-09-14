@@ -20,9 +20,13 @@ export default async function StudyPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await requireOnboarded();
+  // See the note in manor/page.tsx — these are independent, so batch them.
+  const [record, tracks, activity] = await Promise.all([
+    requireOnboarded(),
+    getTracks(),
+    getActivity(),
+  ]);
   const honorific = record?.honorific ?? 'Sir';
-  const [tracks, activity] = await Promise.all([getTracks(), getActivity()]);
   const state = computeCharacterState(activity, record?.characterData ?? DEFAULT_CHARACTER);
   const activeTracks = tracks.filter((t) => t.status === 'active');
   const quests = generateCompulsoryQuests(user.id, activeTracks);

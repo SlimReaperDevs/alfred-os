@@ -12,9 +12,10 @@ export default async function BattlegroundsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await requireOnboarded();
+  // See the note in manor/page.tsx — these are independent, so batch them.
+  const [record, allTracks] = await Promise.all([requireOnboarded(), getTracks()]);
   const honorific = record?.honorific ?? 'Sir';
-  const tracks = (await getTracks()).filter((t) => t.status === 'active');
+  const tracks = allTracks.filter((t) => t.status === 'active');
 
   return (
     <AppShell active="battlegrounds" honorific={honorific}>

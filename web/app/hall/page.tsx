@@ -27,10 +27,10 @@ export default async function HallPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const record = await requireOnboarded();
+  // See the note in manor/page.tsx — these are independent, so batch them.
+  const [record, activity] = await Promise.all([requireOnboarded(), getActivity()]);
   const honorific = record?.honorific ?? 'Sir';
   const character = record?.characterData ?? DEFAULT_CHARACTER;
-  const activity = await getActivity();
   const state = computeCharacterState(activity, character);
   const displayName = character.name || record?.displayName || honorific;
 

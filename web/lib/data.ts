@@ -5,6 +5,7 @@
  * Maps snake_case DB rows <-> the shared camelCase domain types (../src/types),
  * which are the same types the mobile app uses.
  */
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { unwrap } from '@/lib/db';
@@ -78,16 +79,30 @@ function mapResource(row: any): Resource {
 
 // ─── Reads ─────────────────────────────────────────────────────────────────────
 
-/** The authenticated Supabase user's id, or null if not signed in. */
-export async function getAuthUserId(): Promise<string | null> {
+/**
+ * The authenticated Supabase user's id, or null if not signed in.
+ *
+ * Uses getClaims() rather than getUser(). The project signs sessions with ES256
+ * and publishes a JWKS, so the token is verified locally against the cached
+ * public key — cryptographic verification with no network round trip, versus
+ * ~250ms for getUser() from here.
+ *
+ * This is safe because proxy.ts has already run getUser() for this request,
+ * which is what refreshes an expiring token and writes the updated cookie. By
+ * the time a page renders, the cookie is fresh; all we need is to read and
+ * verify it, not revalidate it against the server a second time.
+ *
+ * Wrapped in React cache() so repeat calls within one render — getUserRecord
+ * and getSettings both need it — cost nothing after the first.
+ */
+export const getAuthUserId = cache(async (): Promise<string | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
-}
+  const { data, error } = await supabase.auth.getClaims();
+  if (error || !data?.claims) return null;
+  return (data.claims.sub as string) ?? null;
+});
 
-export async function getUserRecord(): Promise<User | null> {
+export const getUserRecord = cache(async (): Promise<User | null> => {
   const supabase = await createClient();
   const uid = await getAuthUserId();
   if (!uid) return null;
@@ -97,7 +112,7 @@ export async function getUserRecord(): Promise<User | null> {
     'getUserRecord: load own user row',
   );
   return data ? mapUser(data) : null;
-}
+});
 
 export async function getTracks(): Promise<Track[]> {
   const supabase = await createClient();

@@ -23,8 +23,14 @@ function daysUntil(iso: string): number {
 }
 
 export default async function ManorPage() {
-  const record = await requireOnboarded();
-  const [tracks, activity] = await Promise.all([getTracks(), getActivity()]);
+  // One batch, not two waves: tracks and activity are RLS-scoped by auth.uid()
+  // and do not depend on the user record, so awaiting requireOnboarded() first
+  // just added a serial round trip.
+  const [record, tracks, activity] = await Promise.all([
+    requireOnboarded(),
+    getTracks(),
+    getActivity(),
+  ]);
 
   const honorific = record.honorific ?? 'Sir';
   const characterData = record.characterData ?? DEFAULT_CHARACTER;
