@@ -7,6 +7,7 @@
  */
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { unwrap } from '@/lib/db';
 import type {
   User,
   Track,
@@ -91,22 +92,28 @@ export async function getUserRecord(): Promise<User | null> {
   const uid = await getAuthUserId();
   if (!uid) return null;
 
-  const { data } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
+  const data = unwrap(
+    await supabase.from('users').select('*').eq('id', uid).maybeSingle(),
+    'getUserRecord: load own user row',
+  );
   return data ? mapUser(data) : null;
 }
 
 export async function getTracks(): Promise<Track[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from('tracks')
-    .select('*')
-    .order('created_at', { ascending: true });
+  const data = unwrap(
+    await supabase.from('tracks').select('*').order('created_at', { ascending: true }),
+    'getTracks: load tracks',
+  );
   return (data ?? []).map(mapTrack);
 }
 
 export async function getTrackById(id: string): Promise<Track | null> {
   const supabase = await createClient();
-  const { data } = await supabase.from('tracks').select('*').eq('id', id).maybeSingle();
+  const data = unwrap(
+    await supabase.from('tracks').select('*').eq('id', id).maybeSingle(),
+    'getTrackById: load track',
+  );
   return data ? mapTrack(data) : null;
 }
 
@@ -130,8 +137,14 @@ export async function ensureUserRecord(): Promise<User | null> {
     honorific: 'Sir',
     displayName: '',
     characterData: {
-      name: '', career: '', age: null, height: null, weight: null,
-      hobbies: '', backstory: '', charisma: 10,
+      name: '',
+      career: '',
+      age: null,
+      height: null,
+      weight: null,
+      hobbies: '',
+      backstory: '',
+      charisma: 10,
     },
     onboardingComplete: false,
     createdAt: new Date().toISOString(),
@@ -142,16 +155,16 @@ export async function ensureUserRecord(): Promise<User | null> {
 
 export async function getActivity(): Promise<ActivityEntry[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from('activity_log')
-    .select('*')
-    .order('logged_at', { ascending: true });
+  const data = unwrap(
+    await supabase.from('activity_log').select('*').order('logged_at', { ascending: true }),
+    'getActivity: load activity log',
+  );
   return (data ?? []).map(mapActivity);
 }
 
 export async function getResources(): Promise<Resource[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from('resources').select('*');
+  const data = unwrap(await supabase.from('resources').select('*'), 'getResources: load resources');
   return (data ?? []).map(mapResource);
 }
 
@@ -173,7 +186,10 @@ const DEFAULT_WIDGET_LAYOUT: WidgetLayout = {
 export async function getSettings(): Promise<Settings> {
   const supabase = await createClient();
   const uid = await getAuthUserId();
-  const { data } = await supabase.from('settings').select('*').maybeSingle();
+  const data = unwrap(
+    await supabase.from('settings').select('*').maybeSingle(),
+    'getSettings: load settings',
+  );
   return {
     userId: uid ?? '',
     notificationPrefs: data?.notification_prefs ?? DEFAULT_NOTIFICATION_PREFS,
@@ -186,31 +202,37 @@ export async function getSettings(): Promise<Settings> {
 
 export async function logActivity(entry: ActivityEntry): Promise<void> {
   const supabase = await createClient();
-  await supabase.from('activity_log').insert({
-    id: entry.id,
-    user_id: entry.userId,
-    track_id: entry.trackId,
-    action_type: entry.actionType,
-    metadata: entry.metadata,
-    xp_awarded: entry.xpAwarded,
-    logged_at: entry.loggedAt,
-  });
+  unwrap(
+    await supabase.from('activity_log').insert({
+      id: entry.id,
+      user_id: entry.userId,
+      track_id: entry.trackId,
+      action_type: entry.actionType,
+      metadata: entry.metadata,
+      xp_awarded: entry.xpAwarded,
+      logged_at: entry.loggedAt,
+    }),
+    'logActivity: insert activity entry',
+  );
 }
 
 export async function upsertTrack(track: Track): Promise<void> {
   const supabase = await createClient();
-  await supabase.from('tracks').upsert({
-    id: track.id,
-    user_id: track.userId,
-    template_type: track.templateType,
-    name: track.name,
-    config: {
-      currentPhaseIndex: track.currentPhaseIndex,
-      keyDates: track.keyDates,
-      startDate: track.startDate,
-    },
-    status: track.status,
-  });
+  unwrap(
+    await supabase.from('tracks').upsert({
+      id: track.id,
+      user_id: track.userId,
+      template_type: track.templateType,
+      name: track.name,
+      config: {
+        currentPhaseIndex: track.currentPhaseIndex,
+        keyDates: track.keyDates,
+        startDate: track.startDate,
+      },
+      status: track.status,
+    }),
+    'upsertTrack: save track',
+  );
 }
 
 /**
@@ -227,12 +249,15 @@ export async function requireOnboarded(): Promise<User> {
 
 export async function upsertUserRecord(user: User): Promise<void> {
   const supabase = await createClient();
-  await supabase.from('users').upsert({
-    id: user.id,
-    email: user.email,
-    honorific: user.honorific,
-    display_name: user.displayName,
-    character_data: user.characterData,
-    onboarding_complete: user.onboardingComplete,
-  });
+  unwrap(
+    await supabase.from('users').upsert({
+      id: user.id,
+      email: user.email,
+      honorific: user.honorific,
+      display_name: user.displayName,
+      character_data: user.characterData,
+      onboarding_complete: user.onboardingComplete,
+    }),
+    'upsertUserRecord: save user row',
+  );
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { logActivity, upsertTrack, upsertUserRecord, getAuthUserId } from '@/lib/data';
+import { unwrap } from '@/lib/db';
 import { generateStarterQuest } from '@engine/QuestEngine';
 import { generateId } from '@engine/id';
 import { getTemplate } from '@engine/templates';
@@ -47,16 +48,31 @@ export async function startAnewAction(): Promise<void> {
   if (!uid) return;
   const supabase = await createClient();
 
-  await supabase.from('activity_log').delete().eq('user_id', uid);
-  await supabase.from('tracks').delete().eq('user_id', uid); // cascades resources
-  await supabase.from('users').update({
-    display_name: '',
-    character_data: {
-      name: '', career: '', age: null, height: null, weight: null,
-      hobbies: '', backstory: '', charisma: 10,
-    },
-    onboarding_complete: false,
-  }).eq('id', uid);
+  // A partial wipe is worse than a failed one: clearing the activity log but
+  // leaving the tracks, or resetting the profile while the old data survives,
+  // strands the user mid-reset. Throw on the first failure instead.
+  unwrap(
+    await supabase.from('activity_log').delete().eq('user_id', uid),
+    'startAnew: clear activity log',
+  );
+  unwrap(
+    await supabase.from('tracks').delete().eq('user_id', uid), // cascades resources
+    'startAnew: clear tracks',
+  );
+  unwrap(
+    await supabase
+      .from('users')
+      .update({
+        display_name: '',
+        character_data: {
+          name: '', career: '', age: null, height: null, weight: null,
+          hobbies: '', backstory: '', charisma: 10,
+        },
+        onboarding_complete: false,
+      })
+      .eq('id', uid),
+    'startAnew: reset user profile',
+  );
 
   revalidatePath('/', 'layout');
   redirect('/onboarding');
